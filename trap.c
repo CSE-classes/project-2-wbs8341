@@ -49,8 +49,37 @@ trap(struct trapframe *tf)
  // You might need to change the folloiwng default page fault handling
  // for your project 2
  if(tf->trapno == T_PGFLT){                 // CS 3320 project 2
-    uint faulting_va;                       // CS 3320 project 2
-    faulting_va = rcr2();                   // CS 3320 project 2
+    uint fault_va - rcr2();                       // CS 3320 project 2
+    uint va = PGROUNDDOWN(fault_va);                   // CS 3320 project 2
+    struct proc *p = proc;
+
+    if(fault_va >= p->sz) {
+      cprintf("Unhandled page fault!\n");
+      break;
+      }
+
+    if(page_allocator_type == 1)
+    {
+      char *mem = kalloc();
+      if(mem == 0) 
+      {
+        cprintf("Out of memory (lazy alloc)!\n");
+        p->killed = 1;
+        break;
+      }
+      memset(mem, 0, PGSIZE);
+
+      if(mappages(p->pgdir, (char*)va, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0)
+      {
+        kfree(mem);
+        cprintf("mappages failed during lazy alloc\n");
+        p->killed = 1;
+        break;
+      }
+
+      return;
+    }
+
     cprintf("Unhandled page fault for va:0x%x!\n", faulting_va);     // CS 3320 project 2
  }
 

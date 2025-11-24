@@ -107,26 +107,35 @@ userinit(void)
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int
-growproc(int n)
-{
+growproc(int n){
   uint sz;
-  
-  sz = proc->sz;
-  if(n > 0){
-    if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
-    {
-      cprintf("Allocating pages failed!\n"); // CS3320: project 2
-      return -1;
-    }
-  } else if(n < 0){
-    if((sz = deallocuvm(proc->pgdir, sz, sz + n)) == 0)
-    {
-      cprintf("Deallocating pages failed!\n"); // CS3320: project 2
-      return -1;
-    }
+  struct proc*p = myproc();
+  sz = p->sz;
+
+
+  if (page_allocator_type == 1) {
+
+    if (n > 0){
+      if (sz + n > KERNBASE) return -1;
+    p->sz = sz + n;
+    return 0; }
+
+    else if (n < 0) {
+      uint newsz = deallocuvm(p->pgdir, sz, sz + n);
+      p->sz = newsz;
+      return 0; }
+
+    return 0; }
+
+  if (n > 0) {
+    if((sz = allocuvm(p->pgdir, sz, sz + n)) == 0) return -1; }
+
+  else if (n < 0) {
+    sz = deallocuvm(p->pgdir, sz, sz + n);
   }
-  proc->sz = sz;
-  switchuvm(proc);
+
+  p->sz = sz;
+  switchuvm(p);
   return 0;
 }
 
@@ -478,4 +487,4 @@ procdump(void)
     }
     cprintf("\n");
   }
-}
+in }
